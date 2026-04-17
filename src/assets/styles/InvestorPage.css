@@ -1,0 +1,71 @@
+.investor-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 2fr));
+    justify-content: center;
+    gap: 30px;
+}
+
+.investor-item {
+    padding: 25px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.03);
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.investor-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.investor-icon {
+    width: 50px;
+    height: 50px;
+}
+
+.investor-body {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.investor-check {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.investor-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.investor-button {
+    justify-self: start;
+}
+
+.investor-button {
+    justify-self: center;
+}
+
+
+.content {
+    display: flex;
+}
+
+.filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.investor-list-container {
+    width: 100%;
+}
+
+
+.investor-item.myCategory {
+    background-color: #4e434341;
+}

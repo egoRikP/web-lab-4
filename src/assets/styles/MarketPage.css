@@ -1,0 +1,154 @@
+.dashboard-section {
+    margin-bottom: 40px;
+}
+
+.dashboard-title {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.cards-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.card-item {
+    background-color: #F4F4F4;
+
+    border-radius: 15px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.05);
+
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.card-row {
+    display: flex;
+    gap: 20px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.flex-between {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.icon-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon-text img {
+    width: 32px;
+    height: 32px;
+}
+
+.label {
+    display: block;
+    color: rgba(0, 0, 0, 0.5);
+    /* font-size: 1rem; */
+    margin-bottom: 4px;
+}
+
+.value {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.stat-block h4 {
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.85rem;
+    font-weight: normal;
+    margin: 0 0 8px 0;
+}
+
+.right-align {
+    text-align: right;
+}
+
+.stat-block>p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.stat-block>p.green {
+    background-color: rgba(50, 199, 72, 0.2);
+    color: #1A794B;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: inline-block;
+    min-width: 60px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.competitor-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-box {
+    background: #FFFFFF;
+    border-radius: 12px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.logo-box img {
+    width: 30px;
+    height: auto;
+}
+
+.competitor-name {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.green-btn {
+    background-color: #82D8A4;
+
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.full-width {
+    width: 100%;
+}
+
+
+.content {
+    display: flex;
+}
+
+
+.competitor-list-container {
+    width: 100%;
+}
+
+.card-item.myCategory {
+    background-color: #a0939341;
+}
