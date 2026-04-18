@@ -5,16 +5,18 @@ import { useNavigate } from "react-router-dom";
 
 import { DataContext } from "../context/DataContext.js";
 
-export function LoginPage() {
-  const { data, isLoggedIn, setUserData } = useContext(DataContext);
+import { auth } from "../services/firebase.js";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
+export function LoginPage() {
+  const { isLoggedIn } = useContext(DataContext);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isLoggedIn) {
       navigate("/my-startup");
     }
-  });
+  }, [isLoggedIn]);
 
   const [form, setForm] = useState({
     email: "",
@@ -36,20 +38,13 @@ export function LoginPage() {
       return;
     }
 
-    const user = data.users.find((u) => u.email === form.email);
-
-    if (!user) {
-      alert("Такого юзера немає!");
-      return;
-    }
-
-    if (user.password != form.password) {
-      alert("Неправильний пароль!");
-      return;
-    }
-
-    setUserData(user);
-    navigate("/my-startup");
+    signInWithEmailAndPassword(auth, form.email, form.password)
+      .then((data) => {
+        navigate("/my-startup");
+      })
+      .catch((error) => {
+        alert("Помилка входу: " + error.message);
+      });
   };
 
   return (

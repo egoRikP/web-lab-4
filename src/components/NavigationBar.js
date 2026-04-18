@@ -10,17 +10,24 @@ import { useContext, useState } from "react";
 
 import { DataContext } from "../context/DataContext";
 
+import { auth } from "../services/firebase";
+import { signOut } from "firebase/auth";
+
 export default function NavigationBar() {
-  const { isLoggedIn, setUserData } = useContext(DataContext);
+  const { isLoggedIn } = useContext(DataContext);
 
   const [isOpen, setIsOpen] = useState(false);
 
   const navigate = useNavigate();
 
   function logout() {
-    setUserData(null);
-    localStorage.removeItem(`user`);
-    navigate("/");
+    signOut(auth)
+      .then(() => {
+        navigate("/");
+      })
+      .catch((error) => {
+        console.log("невдалось вийти з акаунта!");
+      });
   }
 
   function toggleMenu() {

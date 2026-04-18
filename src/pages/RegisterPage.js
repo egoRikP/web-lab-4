@@ -5,8 +5,11 @@ import { useNavigate } from "react-router-dom";
 
 import { DataContext } from "../context/DataContext.js";
 
+import { auth } from "../services/firebase.js";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+
 export function RegisterPage() {
-  const { data, setData, isLoggedIn, setUserData } = useContext(DataContext);
+  const { isLoggedIn, setUserData } = useContext(DataContext);
 
   const navigate = useNavigate();
 
@@ -14,7 +17,7 @@ export function RegisterPage() {
     if (isLoggedIn) {
       navigate("/my-startup");
     }
-  });
+  }, [isLoggedIn]);
 
   const [form, setForm] = useState({
     nickname: "",
@@ -38,32 +41,21 @@ export function RegisterPage() {
       return;
     }
 
-    if (form.password !== form.repeatPassword) {
-      alert("Паролі не співпадають!");
-      return;
-    }
-
-    if (data.users.some((u) => u.email === form.email)) {
-      alert("Такий юзер вже є!");
-      return;
-    }
-
     const newUser = {
       nickname: form.nickname,
       email: form.email,
-      password: form.password,
       company: {},
     };
 
-    const newData = {
-      ...data,
-      users: [...data.users, newUser],
-    };
-
-    setData(newData);
-    setUserData(newUser);
-
-    navigate("/my-startup");
+    createUserWithEmailAndPassword(auth, form.email, form.password)
+      .then((data) => {
+        console.log("успішно зареєстрований!");
+        setUserData(newUser);
+        navigate("/my-startup");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (
