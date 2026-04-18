@@ -5,19 +5,19 @@ import { useNavigate } from "react-router-dom";
 
 import { DataContext } from "../context/DataContext.js";
 
-import { auth } from "../services/firebase.js";
+import { auth, db } from "../services/firebase.js";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 export function RegisterPage() {
   const { isLoggedIn, setUserData } = useContext(DataContext);
-
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isLoggedIn) {
       navigate("/my-startup");
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, navigate]);
 
   const [form, setForm] = useState({
     nickname: "",
@@ -41,6 +41,11 @@ export function RegisterPage() {
       return;
     }
 
+    if (form.password !== form.repeatPassword) {
+      alert("Паролі не співпадають!");
+      return;
+    }
+
     const newUser = {
       nickname: form.nickname,
       email: form.email,
@@ -49,12 +54,18 @@ export function RegisterPage() {
 
     createUserWithEmailAndPassword(auth, form.email, form.password)
       .then((data) => {
-        console.log("успішно зареєстрований!");
-        setUserData(newUser);
-        navigate("/my-startup");
+        setDoc(doc(db, "users", data.user.uid), newUser)
+          .then(() => {
+            console.log("успішно зареєстрований!");
+            setUserData(newUser);
+            navigate("/my-startup");
+          })
+          .catch((error) => {
+            alert("Помилка збереження даних: " + error.message);
+          });
       })
       .catch((error) => {
-        console.log(error);
+        alert("Помилка реєстрації: " + error.message);
       });
   };
 
