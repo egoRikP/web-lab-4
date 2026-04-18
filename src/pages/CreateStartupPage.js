@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { DataContext } from "../context/DataContext.js";
 
 import { LoginOrRegister } from "../components/LoginOrRegister.js";
+import { doc, updateDoc } from "firebase/firestore";
+import { auth, db } from "../services/firebase.js";
 
 export function CreateStartupPage() {
   const { data, userData, isLoggedIn, hasCompany, setUserData } =
@@ -16,7 +18,7 @@ export function CreateStartupPage() {
     if (hasCompany) {
       navigate("/my-startup");
     }
-  });
+  }, [hasCompany]);
 
   const [form, setForm] = useState({
     title: "",
@@ -77,13 +79,17 @@ export function CreateStartupPage() {
       monthHistory: [],
     };
 
-    setUserData({ ...userData, company: newCompany });
-    localStorage.setItem(
-      "user",
-      JSON.stringify({ ...userData, company: newCompany }),
-    );
-
-    navigate("/my-startup");
+    updateDoc(doc(db, "users", auth.currentUser.uid), { company: newCompany })
+      .then(() => {
+        setUserData((prev) => ({
+          ...prev,
+          company: newCompany,
+        }));
+        navigate("/my-startup");
+      })
+      .catch((error) => {
+        console.error("Помилка створення компанії: ", error);
+      });
   };
 
   useEffect(() => {
