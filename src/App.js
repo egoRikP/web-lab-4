@@ -16,13 +16,15 @@ import { MyStartupPage } from "./pages/MyStartupPage.js";
 
 import { ProtectedRoute } from "./routes/ProtectedRoute.js";
 
+import { AppLayout } from "./AppLayout.js";
+
 function App() {
   return (
     <DataProvider>
       <Router>
-        <div className="App">
-          <NavigationBar />
-          <Routes>
+        <NavigationBar />
+        <Routes>
+          <Route element={<AppLayout />}>
             <Route path="/" element={<MainPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -33,9 +35,9 @@ function App() {
               <Route path="/create-startup" element={<CreateStartupPage />} />
               <Route path="/my-startup" element={<MyStartupPage />} />
             </Route>
-          </Routes>
-          <Footer />
-        </div>
+          </Route>
+        </Routes>
+        <Footer />
       </Router>
     </DataProvider>
   );
