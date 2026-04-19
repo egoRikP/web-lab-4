@@ -8,10 +8,15 @@ import { DataContext } from "../context/DataContext";
 import { MarketCard } from "../components/MarketCard";
 import { CompetitorCard } from "../components/CompetitorCard";
 
+import { auth, db } from "../services/firebase";
+import { doc, updateDoc, increment, arrayUnion } from "firebase/firestore";
+
 export function MarketPage() {
   const { userData, hasCompany, data, setUserData } = useContext(DataContext);
 
   const competitors = data?.users ?? [];
+
+  const [isTakingMarket, setIsTakingMarket] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState([]);
 
@@ -68,6 +73,7 @@ export function MarketPage() {
 
   function takeMarket(market) {
     if (
+      isTakingMarket ||
       !hasCompany ||
       !isMyCategory(market) ||
       userData.company.myMarkets.includes(market.id) ||
@@ -77,15 +83,30 @@ export function MarketPage() {
       return;
     }
 
-    setUserData((prev) => ({
-      ...prev,
-      company: {
-        ...prev.company,
-        balance: prev.company.balance - market.startSum,
-        monthCosts: prev.company.monthCosts + market.monthPayment,
-        myMarkets: [...prev.company.myMarkets, market.id],
-      },
-    }));
+    setIsTakingMarket(true);
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      "company.balance": increment(-market.startSum),
+      "company.monthCosts": increment(market.monthPayment),
+      "company.myMarkets": arrayUnion(market.id),
+    })
+      .then((data) => {
+        console.log(data);
+        setUserData((prev) => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            balance: prev.company.balance - market.startSum,
+            monthCosts: prev.company.monthCosts + market.monthPayment,
+            myMarkets: [...prev.company.myMarkets, market.id],
+          },
+        }));
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+      .finally(() => {
+        setIsTakingMarket(false);
+      });
   }
 
   return (
