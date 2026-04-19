@@ -5,6 +5,9 @@ import { useContext, useState } from "react";
 import { InvestorCard } from "../components/InvestorCard.js";
 import { DataContext } from "../context/DataContext.js";
 
+import { auth, db } from "../services/firebase.js";
+import { doc, updateDoc, increment, arrayUnion } from "firebase/firestore";
+
 export function InvestorPage() {
   const { data, userData, hasCompany, setUserData } = useContext(DataContext);
 
@@ -12,6 +15,8 @@ export function InvestorPage() {
   const areas = data?.area ?? [];
 
   const [activeFilter, setActiveFilter] = useState([]);
+
+  const [isAddingInvestor, setIsAddingInvestor] = useState(false);
 
   const toggleFilter = (value) => {
     setActiveFilter((prev) =>
@@ -34,24 +39,39 @@ export function InvestorPage() {
 
   function addInvestor(investor) {
     if (
+      isAddingInvestor ||
       !hasCompany ||
       !isMatchingArea(investor) ||
       userData.company.investors.includes(investor.id) ||
-      userData.company.myCompanyPart <= 50
+      userData.company.myCompanyPart - investor.averageCheckPercent < 50
     ) {
       return;
     }
 
-    setUserData({
-      ...userData,
-      company: {
-        ...userData.company,
-        myCompanyPart:
-          userData.company.myCompanyPart - investor.averageCheckPercent,
-        balance: userData.company.balance + investor.check,
-        investors: [...userData.company.investors, investor.id],
-      },
-    });
+    setIsAddingInvestor(true);
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      "company.myCompanyPart": increment(-investor.averageCheckPercent),
+      "company.balance": increment(investor.check),
+      "company.investors": arrayUnion(investor.id),
+    })
+      .then(() => {
+        setUserData((prev) => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            myCompanyPart:
+              prev.company.myCompanyPart - investor.averageCheckPercent,
+            balance: prev.company.balance + investor.check,
+            investors: [...prev.company.investors, investor.id],
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Помилка оновлення інвестора: ", error);
+      })
+      .finally(() => {
+        setIsAddingInvestor(false);
+      });
   }
 
   return (
