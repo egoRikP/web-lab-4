@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect } from "react";
 
 import { auth, db } from "../services/firebase.js";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, collection, getDoc, getDocs } from "firebase/firestore";
 
 export const DataContext = createContext();
@@ -16,7 +16,7 @@ export const DataProvider = ({ children }) => {
     users: [],
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isLoggedIn = !!userData;
   const hasCompany =
@@ -26,7 +26,7 @@ export const DataProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
         setUserData(null);
-        setIsLoading(true);
+        setIsLoading(false);
         return;
       }
 
@@ -50,27 +50,41 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     getDoc(doc(db, "areas", "list"))
       .then((e) => {
-        setData((prev) => ({ ...prev, area: e.data().items }));
+        if (e.exists()) setData((prev) => ({ ...prev, area: e.data().items }));
       })
-      .catch((error) => {});
+      .catch((error) => console.log(error));
 
     getDoc(doc(db, "regions", "list"))
       .then((e) => {
-        setData((prev) => ({ ...prev, region: e.data().items }));
+        if (e.exists())
+          setData((prev) => ({ ...prev, region: e.data().items }));
       })
-      .catch((error) => {});
+      .catch((error) => console.log(error));
 
-    getDoc(doc(db, "investors", "list"))
-      .then((e) => {
-        setData((prev) => ({ ...prev, investors: e.data().items }));
-      })
-      .catch((error) => {});
+    getDocs(collection(db, "investors"))
+      .then((snapshot) => {
+        const investorsList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-    getDoc(doc(db, "markets", "list"))
-      .then((e) => {
-        setData((prev) => ({ ...prev, markets: e.data().items }));
+        setData((prev) => ({
+          ...prev,
+          investors: investorsList,
+        }));
       })
-      .catch((error) => {});
+      .catch((error) => console.log(error));
+
+    getDocs(collection(db, "markets"))
+      .then((snapshot) => {
+        const marketsList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setData((prev) => ({ ...prev, markets: marketsList }));
+      })
+      .catch((error) => console.log(error));
 
     getDocs(collection(db, "users"))
       .then((allUsers) => {
@@ -81,9 +95,7 @@ export const DataProvider = ({ children }) => {
 
         setData((prev) => ({ ...prev, users: usersList }));
       })
-      .catch((error) => {
-        console.log(error);
-      });
+      .catch((error) => console.log(error));
   }, []);
 
   return (

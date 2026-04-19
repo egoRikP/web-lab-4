@@ -9,7 +9,8 @@ import { auth, db } from "../services/firebase.js";
 import { doc, updateDoc, increment, arrayUnion } from "firebase/firestore";
 
 export function InvestorPage() {
-  const { data, userData, hasCompany, setUserData } = useContext(DataContext);
+  const { data, setData, userData, hasCompany, setUserData } =
+    useContext(DataContext);
 
   const investors = data?.investors ?? [];
   const areas = data?.area ?? [];
@@ -37,41 +38,79 @@ export function InvestorPage() {
       investor.region?.includes(region),
     );
 
-  function addInvestor(investor) {
-    if (
-      isAddingInvestor ||
-      !hasCompany ||
-      !isMatchingArea(investor) ||
-      userData.company.investors.includes(investor.id) ||
-      userData.company.myCompanyPart - investor.averageCheckPercent < 50
-    ) {
+  async function addInvestor(investor) {
+    if (isAddingInvestor) return;
+
+    if (!hasCompany) {
+      alert("У вас ще немає компанії!");
+      return;
+    }
+
+    if (!isMatchingArea(investor)) {
+      alert("Сфера діяльності або регіон не збігаються з цим інвестором.");
+      return;
+    }
+
+    if (userData.company.investors.includes(investor.id)) {
+      alert("Ви вже залучили інвестиції від цього фонду.");
+      return;
+    }
+
+    if (userData.company.myCompanyPart - investor.averageCheckPercent < 50) {
+      alert(
+        "Неможливо залучити інвестицію: ваша частка компанії впаде нижче 50%!",
+      );
+      return;
+    }
+
+    if (investor.budget < investor.check) {
+      alert("На жаль, у цього інвестора вичерпано бюджет для нових чеків.");
       return;
     }
 
     setIsAddingInvestor(true);
-    updateDoc(doc(db, "users", auth.currentUser.uid), {
-      "company.myCompanyPart": increment(-investor.averageCheckPercent),
-      "company.balance": increment(investor.check),
-      "company.investors": arrayUnion(investor.id),
-    })
-      .then(() => {
-        setUserData((prev) => ({
-          ...prev,
-          company: {
-            ...prev.company,
-            myCompanyPart:
-              prev.company.myCompanyPart - investor.averageCheckPercent,
-            balance: prev.company.balance + investor.check,
-            investors: [...prev.company.investors, investor.id],
-          },
-        }));
-      })
-      .catch((error) => {
-        console.error("Помилка оновлення інвестора: ", error);
-      })
-      .finally(() => {
-        setIsAddingInvestor(false);
+
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    const investorRef = doc(db, "investors", String(investor.id));
+
+    try {
+      await updateDoc(userRef, {
+        "company.myCompanyPart": increment(-investor.averageCheckPercent),
+        "company.balance": increment(investor.check),
+        "company.investors": arrayUnion(investor.id),
       });
+
+      await updateDoc(investorRef, {
+        budget: increment(-investor.check),
+      });
+
+      setUserData((prev) => ({
+        ...prev,
+        company: {
+          ...prev.company,
+          myCompanyPart:
+            prev.company.myCompanyPart - investor.averageCheckPercent,
+          balance: prev.company.balance + investor.check,
+          investors: [...prev.company.investors, investor.id],
+        },
+      }));
+
+      setData((prev) => ({
+        ...prev,
+        investors: prev.investors.map((inv) =>
+          inv.id === investor.id
+            ? { ...inv, budget: inv.budget - investor.check }
+            : inv,
+        ),
+      }));
+
+      alert(`Успіх! Ви залучили $${investor.check} від ${investor.title}.`);
+    } catch (error) {
+      alert("Помилка оновлення інвестора: " + error.message);
+      console.error("Помилка оновлення інвестора: ", error);
+    } finally {
+      setIsAddingInvestor(false);
+    }
   }
 
   return (

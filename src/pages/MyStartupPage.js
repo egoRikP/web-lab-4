@@ -3,7 +3,7 @@ import "../assets/styles/MyStartupPage.css";
 import fieldIcon from "../assets/images/field-icon.png";
 import regionIcon from "../assets/images/region-icon.png";
 
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { DataContext } from "../context/DataContext.js";
 
@@ -11,187 +11,29 @@ import { MyInvestorRow } from "../components/MyInvestorRow.js";
 import { MyMarketRow } from "../components/MyMarketRow.js";
 import { asList } from "../utils/renderUtils";
 
-import { LoginOrRegister } from "../components/LoginOrRegister.js";
-
 import Chart from "chart.js/auto";
 
+import { auth, db } from "../services/firebase.js";
+import { doc, updateDoc, increment, arrayRemove } from "firebase/firestore";
+
 export function MyStartupPage() {
-  const { data, setData, userData, isLoggedIn, hasCompany, setUserData } =
+  const { data, setData, userData, hasCompany, setUserData } =
     useContext(DataContext);
 
-  function isEnoughtMoney(need) {
-    return userData.company.balance >= need;
-  }
-
-  function addOffice() {
-    if (!isEnoughtMoney(1500)) {
-      return;
-    }
-
-    setUserData({
-      ...userData,
-      company: {
-        ...userData.company,
-        balance: userData.company.balance - 1500,
-        monthCosts: userData.company.monthCosts + 1500,
-        offices: userData.company.offices + 1,
-      },
-    });
-  }
-
-  function removeOffice() {
-    if (
-      userData.company.offices <= 0 ||
-      userData.company.offices * userData.company.maxEmpoyeesPerOffice -
-        userData.company.empoyees <
-        userData.company.maxEmpoyeesPerOffice
-    ) {
-      return;
-    }
-
-    setUserData({
-      ...userData,
-      company: {
-        ...userData.company,
-        monthCosts: userData.company.monthCosts - 1500,
-        offices: userData.company.offices - 1,
-      },
-    });
-  }
-
-  function addEmployee() {
-    if (
-      !isEnoughtMoney(500) ||
-      userData.company.offices * userData.company.maxEmpoyeesPerOffice -
-        userData.company.empoyees <=
-        0
-    ) {
-      return;
-    }
-
-    setUserData({
-      ...userData,
-      company: {
-        ...userData.company,
-        balance: userData.company.balance - 500,
-        monthCosts: userData.company.monthCosts + 500,
-        empoyees: userData.company.empoyees + 1,
-      },
-    });
-  }
-
-  function removeEmployee() {
-    if (userData.company.empoyees <= 0) {
-      return;
-    }
-
-    setUserData({
-      ...userData,
-      company: {
-        ...userData.company,
-        monthCosts: userData.company.monthCosts - 500,
-        empoyees: userData.company.empoyees - 1,
-      },
-    });
-  }
-
-  const myMarkets = data?.markets.filter((element) =>
-    (userData?.company?.myMarkets || []).includes(element.id),
-  );
-
-  const myInvestors = data?.investors.filter((element) =>
-    (userData?.company?.investors || []).includes(element.id),
-  );
-
-  function getValidCompetitors() {
-    return data.users.filter(
-      (c) => c !== userData && c.company && Object.keys(c.company).length > 0,
-    );
-  }
-
-  const share = (investor) =>
-    (userData?.company?.balance || 0) * (investor.averageCheckPercent / 100);
-
-  function getMyMarketShare(marketIndex) {
-    let myStrength = userData.company.empoyees + userData.company.offices;
-    let competitorsStrength = getValidCompetitors()
-      .filter((c) => c.company.myMarkets?.includes(marketIndex))
-      .reduce((sum, c) => sum + (c.company.empoyees + c.company.offices), 0);
-
-    let totalStrength = myStrength + competitorsStrength;
-    return totalStrength > 0
-      ? ((myStrength / totalStrength) * 100).toFixed(1)
-      : 100;
-  }
-
-  function leaveMarket(market) {
-    if (!userData) return;
-
-    const newMyMarkets = userData.company.myMarkets.filter(
-      (id) => id !== market.id,
-    );
-
-    const targetMarket = data.markets.find((m) => m.id === market.id);
-
-    setUserData((prev) => ({
-      ...prev,
-      company: {
-        ...prev.company,
-        myMarkets: newMyMarkets,
-        monthCosts: prev.company.monthCosts - (targetMarket?.monthPayment || 0),
-      },
-    }));
-  }
-
-  function nextMonth() {
-    let totalIncome = 0;
-    const company = userData.company;
-    const myStrength = company.empoyees + company.offices;
-    const validCompetitors = getValidCompetitors();
-
-    const updatedMarkets = data.markets.map((market) => {
-      if (!company.myMarkets.includes(market.id)) return market;
-
-      const competitorsStrength = validCompetitors
-        .filter((c) => c.company.myMarkets?.includes(market.id))
-        .reduce((sum, c) => sum + (c.company.empoyees + c.company.offices), 0);
-
-      const totalStrength = myStrength + competitorsStrength;
-      const myShare = totalStrength > 0 ? myStrength / totalStrength : 1;
-      const penetrationRate = Math.min(0.001 + myStrength * 0.0005, 0.05);
-
-      totalIncome += Math.round(
-        (market.budget / 12) * penetrationRate * myShare,
-      );
-
-      const growth = Math.random() * 0.1 - 0.03;
-      return {
-        ...market,
-        budget: Math.round(market.budget * (1 + growth)),
-      };
-    });
-
-    const newBalance = company.balance + totalIncome - company.monthCosts;
-
-    const updatedCompany = {
-      ...company,
-      monthProfit: totalIncome,
-      balance: newBalance,
-      monthHistory: [
-        ...(company.monthHistory || []),
-        { balance: newBalance, costs: company.monthCosts, profit: totalIncome },
-      ],
-    };
-
-    setUserData({ ...userData, company: updatedCompany });
-
-    setData({ ...data, markets: updatedMarkets });
-  }
+  const [inAction, setInAction] = useState({
+    addOffice: false,
+    removeOffice: false,
+    addEmployee: false,
+    removeEmployee: false,
+    leavingMarket: false,
+  });
 
   const chartRef = useRef(null);
   const chartInstanceRef = useRef(null);
 
   useEffect(() => {
+    if (!hasCompany) return;
+
     const ctx = chartRef.current;
     if (!ctx) return;
 
@@ -234,19 +76,20 @@ export function MyStartupPage() {
       options: {
         responsive: true,
         scales: {
-          y: { ticks: { callback: (val) => `$${val.toLocaleString()}` } },
+          y: {
+            ticks: { callback: (val) => `$${val.toLocaleString()}` },
+          },
         },
       },
     });
 
     return () => {
-      // cleanup при unmount
       chartInstanceRef.current?.destroy();
       chartInstanceRef.current = null;
     };
-  }, [userData?.company?.monthHistory]);
+  }, [userData?.company?.monthHistory, hasCompany]);
 
-  if (Object.keys(userData.company).length == 0) {
+  if (!hasCompany) {
     return (
       <div className="flex-column">
         <h3>Ще немає компанії!</h3>
@@ -256,6 +99,273 @@ export function MyStartupPage() {
       </div>
     );
   }
+
+  function isEnoughMoney(need) {
+    return userData.company.balance >= need;
+  }
+
+  function getValidCompetitors() {
+    return (data?.users || []).filter(
+      (c) =>
+        c.email !== userData.email &&
+        c.company &&
+        Object.keys(c.company).length > 0,
+    );
+  }
+
+  const share = (investor) => investor.check;
+
+  function getMyMarketShare(marketId) {
+    const myStrength = userData.company.empoyees + userData.company.offices;
+    const competitorsStrength = getValidCompetitors()
+      .filter((c) => c.company.myMarkets?.includes(marketId))
+      .reduce((sum, c) => sum + (c.company.empoyees + c.company.offices), 0);
+
+    const totalStrength = myStrength + competitorsStrength;
+    return totalStrength > 0
+      ? ((myStrength / totalStrength) * 100).toFixed(1)
+      : 100;
+  }
+
+  function addOffice() {
+    if (inAction.addOffice || !isEnoughMoney(1500)) return;
+
+    setInAction((prev) => ({ ...prev, addOffice: true }));
+
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      "company.balance": increment(-1500),
+      "company.monthCosts": increment(1500),
+      "company.offices": increment(1),
+    })
+      .then(() => {
+        setUserData((prev) => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            balance: prev.company.balance - 1500,
+            monthCosts: prev.company.monthCosts + 1500,
+            offices: prev.company.offices + 1,
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Помилка оновлення офісів:", error);
+      })
+      .finally(() => {
+        setInAction((prev) => ({ ...prev, addOffice: false }));
+      });
+  }
+
+  function removeOffice() {
+    if (
+      inAction.removeOffice ||
+      userData.company.offices <= 0 ||
+      userData.company.offices * userData.company.maxEmpoyeesPerOffice -
+        userData.company.empoyees <
+        userData.company.maxEmpoyeesPerOffice
+    ) {
+      return;
+    }
+
+    setInAction((prev) => ({ ...prev, removeOffice: true }));
+
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      "company.monthCosts": increment(-1500),
+      "company.offices": increment(-1),
+    })
+      .then(() => {
+        setUserData((prev) => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            monthCosts: prev.company.monthCosts - 1500,
+            offices: prev.company.offices - 1,
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Помилка видалення офісу:", error);
+      })
+      .finally(() => {
+        setInAction((prev) => ({ ...prev, removeOffice: false }));
+      });
+  }
+
+  function addEmployee() {
+    if (
+      inAction.addEmployee ||
+      !isEnoughMoney(500) ||
+      userData.company.offices * userData.company.maxEmpoyeesPerOffice -
+        userData.company.empoyees <=
+        0
+    ) {
+      return;
+    }
+
+    setInAction((prev) => ({ ...prev, addEmployee: true }));
+
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      "company.balance": increment(-500),
+      "company.monthCosts": increment(500),
+      "company.empoyees": increment(1),
+    })
+      .then(() => {
+        setUserData((prev) => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            balance: prev.company.balance - 500,
+            monthCosts: prev.company.monthCosts + 500,
+            empoyees: prev.company.empoyees + 1,
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Помилка найму працівника:", error);
+      })
+      .finally(() => {
+        setInAction((prev) => ({ ...prev, addEmployee: false }));
+      });
+  }
+
+  function removeEmployee() {
+    if (inAction.removeEmployee || userData.company.empoyees <= 0) return;
+
+    setInAction((prev) => ({ ...prev, removeEmployee: true }));
+
+    updateDoc(doc(db, "users", auth.currentUser.uid), {
+      "company.monthCosts": increment(-500),
+      "company.empoyees": increment(-1),
+    })
+      .then(() => {
+        setUserData((prev) => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            monthCosts: prev.company.monthCosts - 500,
+            empoyees: prev.company.empoyees - 1,
+          },
+        }));
+      })
+      .catch((error) => {
+        console.error("Помилка звільнення працівника:", error);
+      })
+      .finally(() => {
+        setInAction((prev) => ({ ...prev, removeEmployee: false }));
+      });
+  }
+
+  const leaveMarket = async (market) => {
+    if (inAction.leavingMarket) return;
+
+    setInAction((prev) => ({ ...prev, leavingMarket: true }));
+
+    try {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        "company.myMarkets": arrayRemove(market.id),
+        "company.monthCosts": increment(-(market.monthPayment || 0)),
+      });
+
+      setUserData((prev) => ({
+        ...prev,
+        company: {
+          ...prev.company,
+          myMarkets: prev.company.myMarkets.filter((id) => id !== market.id),
+          monthCosts: prev.company.monthCosts - (market.monthPayment || 0),
+        },
+      }));
+    } catch (error) {
+      console.error("Помилка при виході з ринку: ", error);
+    } finally {
+      setInAction((prev) => ({ ...prev, leavingMarket: false }));
+    }
+  };
+
+  async function nextMonth() {
+    const company = userData?.company;
+    if (!company) return;
+
+    if (company.balance < 0) {
+      alert("Неможливо перейти до наступного місяця: від'ємний баланс!");
+      return;
+    }
+
+    let totalIncome = 0;
+    const myStrength = company.empoyees + company.offices;
+    const validCompetitors = getValidCompetitors();
+    const marketsToUpdate = [];
+
+    const updatedMarkets = (data?.markets || []).map((market) => {
+      if (!company.myMarkets.includes(market.id)) return market;
+
+      const competitorsStrength = validCompetitors
+        .filter((c) => c.company.myMarkets?.includes(market.id))
+        .reduce((sum, c) => sum + (c.company.empoyees + c.company.offices), 0);
+
+      const totalStrength = myStrength + competitorsStrength;
+      const myShare = totalStrength > 0 ? myStrength / totalStrength : 1;
+      const penetrationRate = Math.min(0.001 + myStrength * 0.0005, 0.05);
+
+      totalIncome += Math.round(
+        (market.budget / 12) * penetrationRate * myShare,
+      );
+
+      const growth = Math.random() * 0.1 - 0.03;
+      const newBudget = Math.round(market.budget * (1 + growth));
+      const updatedMarket = { ...market, budget: newBudget };
+      marketsToUpdate.push(updatedMarket);
+      return updatedMarket;
+    });
+
+    const newBalance = company.balance + totalIncome - company.monthCosts;
+    const newHistoryItem = {
+      balance: newBalance,
+      costs: company.monthCosts,
+      profit: totalIncome,
+    };
+
+    try {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        "company.balance": newBalance,
+        "company.monthProfit": totalIncome,
+        "company.monthHistory": [
+          ...(company.monthHistory || []),
+          newHistoryItem,
+        ],
+      });
+
+      for (const market of marketsToUpdate) {
+        await updateDoc(doc(db, "markets", String(market.id)), {
+          budget: market.budget,
+        });
+      }
+
+      setUserData((prev) => ({
+        ...prev,
+        company: {
+          ...prev.company,
+          balance: newBalance,
+          monthProfit: totalIncome,
+          monthHistory: [...(prev.company.monthHistory || []), newHistoryItem],
+        },
+      }));
+
+      setData((prev) => ({
+        ...prev,
+        markets: updatedMarkets,
+      }));
+    } catch (error) {
+      console.error("Помилка nextMonth:", error);
+    }
+  }
+
+  const myMarkets = data?.markets.filter((element) =>
+    (userData?.company?.myMarkets || []).includes(element.id),
+  );
+
+  const myInvestors = data?.investors.filter((element) =>
+    (userData?.company?.investors || []).includes(element.id),
+  );
 
   return (
     <main className="wrapper">
@@ -277,6 +387,7 @@ export function MyStartupPage() {
                 <img
                   className="my-startup-logo"
                   src="../src/images/my-company-icon.png"
+                  alt="Логотип компанії"
                 />
                 <h3 className="my-startup-title" id="companyTitle">
                   {userData.company.title}
@@ -293,15 +404,15 @@ export function MyStartupPage() {
               </div>
 
               <div className="my-startup-item">
-                <img src={regionIcon} />
+                <img src={regionIcon} alt="Регіон" />
                 <div>
-                  <h4>Ринки</h4>
+                  <h4>Регіони</h4>
                   {asList(userData.company.region)}
                 </div>
               </div>
 
               <div className="my-startup-item">
-                <img src={fieldIcon} />
+                <img src={fieldIcon} alt="Сфера" />
                 <div>
                   <h4>Сфера</h4>
                   {asList(userData.company.area)}
@@ -323,7 +434,14 @@ export function MyStartupPage() {
                 </div>
                 <div className="my-startup-block-item">
                   <h4>Баланс</h4>
-                  <p id="companyBalance">${userData.company.balance}</p>
+                  <p
+                    id="companyBalance"
+                    style={{
+                      color: userData.company.balance < 0 ? "red" : "inherit",
+                    }}
+                  >
+                    ${userData.company.balance.toLocaleString()}
+                  </p>
                 </div>
                 <div className="my-startup-block-item">
                   <h4>Прибуток / міс.</h4>
@@ -333,9 +451,7 @@ export function MyStartupPage() {
                 </div>
                 <div className="my-startup-block-item">
                   <h4>Витрати / міс.</h4>
-                  <p className="green" id="companyMonthPayment">
-                    ${userData.company.monthCosts}
-                  </p>
+                  <p id="companyMonthPayment">${userData.company.monthCosts}</p>
                 </div>
               </div>
             </div>
@@ -360,7 +476,6 @@ export function MyStartupPage() {
                     userData.company.maxEmpoyeesPerOffice}
                 </p>
               </div>
-
               <div className="my-startup-block-item">
                 <h4>Вільних місць</h4>
                 <p id="companyAvailablePlacesForEmployees">
