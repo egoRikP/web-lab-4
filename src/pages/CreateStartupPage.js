@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 import { DataContext } from "../context/DataContext.js";
 
-import { LoginOrRegister } from "../components/LoginOrRegister.js";
 import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase.js";
 
@@ -95,10 +94,6 @@ export function CreateStartupPage() {
   useEffect(() => {
     console.log(form);
   }, [form]);
-
-  if (!isLoggedIn) {
-    return <LoginOrRegister />;
-  }
 
   return (
     <main className="wrapper">

@@ -14,6 +14,8 @@ import { InvestorPage } from "./pages/InvestorPage.js";
 import { MarketPage } from "./pages/MarketPage.js";
 import { MyStartupPage } from "./pages/MyStartupPage.js";
 
+import { ProtectedRoute } from "./routes/ProtectedRoute.js";
+
 function App() {
   return (
     <DataProvider>
@@ -24,10 +26,13 @@ function App() {
             <Route path="/" element={<MainPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/create-startup" element={<CreateStartupPage />} />
             <Route path="/investors" element={<InvestorPage />} />
             <Route path="/market" element={<MarketPage />} />
-            <Route path="/my-startup" element={<MyStartupPage />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/create-startup" element={<CreateStartupPage />} />
+              <Route path="/my-startup" element={<MyStartupPage />} />
+            </Route>
           </Routes>
           <Footer />
         </div>

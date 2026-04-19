@@ -246,10 +246,6 @@ export function MyStartupPage() {
     };
   }, [userData?.company?.monthHistory]);
 
-  if (!isLoggedIn) {
-    return <LoginOrRegister />;
-  }
-
   if (Object.keys(userData.company).length == 0) {
     return (
       <div className="flex-column">
