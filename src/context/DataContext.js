@@ -47,20 +47,24 @@ export const DataProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
+  const getAreas = () => {
     getDoc(doc(db, "areas", "list"))
       .then((e) => {
         if (e.exists()) setData((prev) => ({ ...prev, area: e.data().items }));
       })
       .catch((error) => console.log(error));
+  };
 
+  const getRegions = () => {
     getDoc(doc(db, "regions", "list"))
       .then((e) => {
         if (e.exists())
           setData((prev) => ({ ...prev, region: e.data().items }));
       })
       .catch((error) => console.log(error));
+  };
 
+  const getInvestors = () => {
     getDocs(collection(db, "investors"))
       .then((snapshot) => {
         const investorsList = snapshot.docs.map((doc) => ({
@@ -74,7 +78,9 @@ export const DataProvider = ({ children }) => {
         }));
       })
       .catch((error) => console.log(error));
+  };
 
+  const getMarkets = () => {
     getDocs(collection(db, "markets"))
       .then((snapshot) => {
         const marketsList = snapshot.docs.map((doc) => ({
@@ -85,7 +91,9 @@ export const DataProvider = ({ children }) => {
         setData((prev) => ({ ...prev, markets: marketsList }));
       })
       .catch((error) => console.log(error));
+  };
 
+  const getUsers = () => {
     getDocs(collection(db, "users"))
       .then((allUsers) => {
         const usersList = allUsers.docs.map((doc) => ({
@@ -96,11 +104,25 @@ export const DataProvider = ({ children }) => {
         setData((prev) => ({ ...prev, users: usersList }));
       })
       .catch((error) => console.log(error));
-  }, []);
+  };
+
+  //   useEffect(() => {
+  // getAreas();
+  // getRegions();
+  // getInvestors();
+  // getMarkets();
+  // getUsers();
+  //   }, []);
 
   return (
     <DataContext.Provider
       value={{
+        getAreas,
+        getRegions,
+        getInvestors,
+        getMarkets,
+        getUsers,
+
         isLoading,
         data,
         setData,

@@ -9,8 +9,15 @@ import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase.js";
 
 export function CreateStartupPage() {
-  const { data, userData, isLoggedIn, hasCompany, setUserData } =
-    useContext(DataContext);
+  const {
+    data,
+    userData,
+    isLoggedIn,
+    hasCompany,
+    setUserData,
+    getAreas,
+    getRegions,
+  } = useContext(DataContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,6 +25,11 @@ export function CreateStartupPage() {
       navigate("/my-startup");
     }
   }, [hasCompany]);
+
+  useEffect(() => {
+    getAreas();
+    getRegions();
+  }, []);
 
   const [form, setForm] = useState({
     title: "",

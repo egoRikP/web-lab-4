@@ -1,6 +1,6 @@
 import "../assets/styles/InvestorPage.css";
 
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { InvestorCard } from "../components/InvestorCard.js";
 import { DataContext } from "../context/DataContext.js";
@@ -9,8 +9,12 @@ import { auth, db } from "../services/firebase.js";
 import { doc, updateDoc, increment, arrayUnion } from "firebase/firestore";
 
 export function InvestorPage() {
-  const { data, setData, userData, hasCompany, setUserData } =
+  const { data, setData, userData, hasCompany, setUserData, getInvestors } =
     useContext(DataContext);
+
+  useEffect(() => {
+    getInvestors();
+  }, []);
 
   const investors = data?.investors ?? [];
   const areas = data?.area ?? [];

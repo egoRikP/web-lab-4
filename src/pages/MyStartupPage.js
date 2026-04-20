@@ -17,8 +17,20 @@ import { auth, db } from "../services/firebase.js";
 import { doc, updateDoc, increment, arrayRemove } from "firebase/firestore";
 
 export function MyStartupPage() {
-  const { data, setData, userData, hasCompany, setUserData } =
-    useContext(DataContext);
+  const {
+    data,
+    setData,
+    userData,
+    hasCompany,
+    setUserData,
+    getInvestors,
+    getMarkets,
+  } = useContext(DataContext);
+
+  useEffect(() => {
+    getMarkets();
+    getInvestors();
+  }, []);
 
   const [inAction, setInAction] = useState({
     addOffice: false,

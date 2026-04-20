@@ -2,7 +2,7 @@ import "../assets/styles/MarketPage.css";
 
 import fieldIcon from "../assets/images/field-icon.png";
 
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { DataContext } from "../context/DataContext";
 
 import { MarketCard } from "../components/MarketCard";
@@ -12,13 +12,19 @@ import { auth, db } from "../services/firebase";
 import { doc, updateDoc, increment, arrayUnion } from "firebase/firestore";
 
 export function MarketPage() {
-  const { userData, hasCompany, data, setUserData } = useContext(DataContext);
+  const { userData, hasCompany, data, setUserData, getMarkets, getUsers } =
+    useContext(DataContext);
 
   const competitors = data?.users ?? [];
 
   const [isTakingMarket, setIsTakingMarket] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState([]);
+
+  useEffect(() => {
+    getMarkets();
+    getUsers();
+  }, []);
 
   const clearFilter = () => {
     setActiveFilter([]);
@@ -112,7 +118,7 @@ export function MarketPage() {
   return (
     <main className="wrapper">
       <section>
-        <div className="dashboard-section">
+        {/* <div className="dashboard-section">
           <h3 className="dashboard-title">Тренди</h3>
           <ul className="cards-list">
             <li className="card-item">
@@ -167,7 +173,7 @@ export function MarketPage() {
               </div>
             </li>
           </ul>
-        </div>
+        </div> */}
 
         <div className="dashboard-section">
           <h3 className="dashboard-title">Ринки збуту</h3>
