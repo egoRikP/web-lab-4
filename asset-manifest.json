@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/web-lab-4/static/css/main.44168468.css",
+    "main.js": "/web-lab-4/static/js/main.c1bed32a.js",
+    "static/media/market-icon.png": "/web-lab-4/static/media/market-icon.6dfd7bd3b42288981487.png",
+    "static/media/logo-icon.png": "/web-lab-4/static/media/logo-icon.5d4f79e7742dfa53f5f3.png",
+    "static/media/investor-icon.png": "/web-lab-4/static/media/investor-icon.6e93e9a845934d07422e.png",
+    "index.html": "/web-lab-4/index.html",
+    "main.44168468.css.map": "/web-lab-4/static/css/main.44168468.css.map",
+    "main.c1bed32a.js.map": "/web-lab-4/static/js/main.c1bed32a.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.44168468.css",
+    "static/js/main.c1bed32a.js"
+  ]
+}
