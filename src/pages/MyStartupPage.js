@@ -386,7 +386,7 @@ export function MyStartupPage() {
               <div className="my-startup-header">
                 <img
                   className="my-startup-logo"
-                  src="../src/images/my-company-icon.png"
+                  src={`https://ui-avatars.com/api/?name=${userData.company.title}`}
                   alt="Логотип компанії"
                 />
                 <h3 className="my-startup-title" id="companyTitle">

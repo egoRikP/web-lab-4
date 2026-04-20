@@ -14,7 +14,7 @@ import { auth } from "../services/firebase";
 import { signOut } from "firebase/auth";
 
 export default function NavigationBar() {
-  const { isLoggedIn } = useContext(DataContext);
+  const { isLoggedIn, userData } = useContext(DataContext);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,9 +72,12 @@ export default function NavigationBar() {
 
       <div className={`auth ${isOpen ? "open" : ""}`}>
         {isLoggedIn ? (
-          <button className="button red" onClick={logout}>
-            Вихід
-          </button>
+          <>
+            <div>{userData.email}</div>
+            <button className="button red" onClick={logout}>
+              Вихід
+            </button>
+          </>
         ) : (
           <>
             <Link className="auth-item" to="/register">
